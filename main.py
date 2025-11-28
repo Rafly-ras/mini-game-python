@@ -10,6 +10,9 @@ pygame.init()
 player_ship = 'assets/plyship.png'
 enemy_ship = 'assets/enemyship.png'
 ufo_ship = 'assets/ufo.png'
+player_bullet = 'assets/pbullet.png'
+enemy_bullet = 'assets/enemybullet.png'
+ufo_bullet = 'assets/enemybullet.png'
 
 screen = pygame.display.set_mode((0,0), FULLSCREEN)
 s_width, s_height = screen.get_size()
@@ -21,6 +24,11 @@ background_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 ufo_group = pygame.sprite.Group()
+playerbullet_group = pygame.sprite.Group()
+enemybullet_group = pygame.sprite.Group()
+ufobullet_group = pygame.sprite.Group()
+
+
 sprite_group = pygame.sprite.Group()
 
 class Background(pygame.sprite.Sprite):
@@ -51,6 +59,14 @@ class Player(pygame.sprite.Sprite):
         mouse = pygame.mouse.get_pos()
         self.rect.x = mouse[0]
         self.rect.y = mouse [1]
+    
+    def shoot(self):
+        bullet = PlayerBullet(player_bullet)
+        mouse = pygame.mouse.get_pos()
+        bullet.rect.x = mouse[0]
+        bullet.rect.y = mouse[1]
+        playerbullet_group.add(bullet)
+        sprite_group.add(bullet)
 
 class Enemy(Player):
     def __init__(self, img):
@@ -64,6 +80,15 @@ class Enemy(Player):
         if self.rect.y > s_height:
             self.rect.x = random.randrange(0, s_width)
             self.rect.y = random.randrange(-2000, 0)
+        self.shoot()
+    
+    def shoot(self):
+        if self.rect.y in (0, 30, 80, 300, 700):
+            enemybullet = EnemyBullet(enemy_bullet)
+            enemybullet.rect.x = self.rect.x + 20
+            enemybullet.rect.y = self.rect.y + 50
+            enemybullet_group.add(enemybullet)
+            sprite_group.add(enemybullet)
 
 class Ufo(Enemy):
     def __init__(self, img):
@@ -78,6 +103,38 @@ class Ufo(Enemy):
             self.movw *= -1
         elif self.rect.x < -200:
             self.move *= -1
+        self.shoot()
+    
+    def shoot(self):
+        if self.rect.x % 50 == 0:
+            ufobullet = EnemyBullet(ufo_bullet)
+            ufobullet.rect.x = self.rect.x + 50
+            ufobullet.rect.y = self.rect.y + 70
+            ufobullet_group.add(ufobullet)
+            sprite_group.add(ufobullet)
+
+
+class PlayerBullet(pygame.sprite.Sprite):
+    def __init__(self, img):
+        super().__init__()
+        self.image = pygame.image.load(img)
+        self.rect = self.image.get_rect()
+        self.image.set_colorkey('black')
+
+    def update(self):
+        self.rect.y -= 5
+        if self.rect.y < 0:
+            self.kill()
+
+class EnemyBullet(PlayerBullet):
+    def __init__(self, img):
+        super().__init__(img)
+        self.image.set_colorkey('white')
+
+    def update(self):
+        self.rect.y += 3
+        if self.rect.y > s_height:
+            self.kill()
 
 class Game:
     def __init__(self):
@@ -101,7 +158,7 @@ class Game:
         for i in range(10):
             self.enemy = Enemy(enemy_ship)
             enemy_group.add(self.enemy)
-            sprite_group.add(self.enemy)
+            sprite_group.add(self.enemy) 
     
     def create_ufo(self):
         for i in range(1):
@@ -127,9 +184,15 @@ class Game:
                     pygame.quit()
                     sys.exit()
                 
-                if event.type == KEYDOWN and event.key == K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
+                if event.type == KEYDOWN:
+                    self.player.shoot()
+                    if event.key == K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 3:  # 3 = klik kanan
+                        self.player.shoot()
 
             pygame.display.update()
             clock.tick(FPS)
