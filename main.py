@@ -138,6 +138,9 @@ class EnemyBullet(PlayerBullet):
 
 class Game:
     def __init__(self):
+        self.count_hit = 0
+        self.count_hit2 = 0
+        self.lives = 3
         self.run_game()
 
     def create_background(self):
@@ -165,6 +168,48 @@ class Game:
             self.ufo = Ufo(ufo_ship)
             ufo_group.add(self.ufo)
             sprite_group.add(self.ufo)
+    
+    def playerbullet_hits_enemy(self):
+        hits = pygame.sprite.groupcollide(enemy_group, playerbullet_group, False, True)
+        for i in hits:
+            self.count_hit += 1
+            if self.count_hit == 2:
+                i.rect.x = random.randrange(0, s_width)
+                i.rect.y = random.randrange(-300, -100)
+                self.count_hit = 0
+    
+    def playerbullet_hits_ufo(self):
+        hits = pygame.sprite.groupcollide(ufo_group, playerbullet_group, False, True)
+        for i in hits:
+            self.count_hit2 += 1
+            if self.count_hit2 == 10:
+                i.rect.x = -199
+                self.count_hit2 = 0
+    
+    def enemybullet_hits_player(self):
+        hits = pygame.sprite.spritecollide(self.player, enemybullet_group, True)
+        if hits:
+            self.lives -= 1
+            if self.lives < 0:
+                pygame.quit()
+                sys.exit()
+    
+    def ufobullet_hits_player(self):
+          hits = pygame.sprite.spritecollide(self.player, ufobullet_group, True)
+          if hits:
+            self.lives -= 1
+            if self.lives < 0:
+                pygame.quit()
+                sys.exit()
+    
+    def create_lives(self):
+        self.live_img = pygame.image.load(player_ship)
+        self.live_img = pygame.transform.scale(self.live_img, (30,30))
+        n = 0
+        for i in range(self.lives):
+            screen.blit(self.live_img, (0+n, s_height-50))
+            n += 55
+
 
     def run_update(self):
         sprite_group.update()
@@ -177,6 +222,11 @@ class Game:
         self.create_ufo()
         while True:
             screen.fill('black')
+            self.playerbullet_hits_enemy()
+            self.playerbullet_hits_ufo()
+            self.enemybullet_hits_player()
+            self.ufobullet_hits_player()
+            self.create_lives()
             self.run_update()
 
             for event in pygame.event.get():
