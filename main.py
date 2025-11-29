@@ -235,7 +235,8 @@ class Game:
                     sys.exit()
                 
                 if event.type == KEYDOWN:
-                    self.player.shoot()
+                    if event.key == K_SPACE:
+                        self.player.shoot()
                     if event.key == K_ESCAPE:
                         pygame.quit()
                         sys.exit()
